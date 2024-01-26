@@ -26,9 +26,8 @@ router.get("/", async function(request, response) {
     return response.json(404).json({message : "blogs not found"});
 })
 
+
 router.use(checkUserAuth);
-
-
 
 /**
  * A route is defined for creating a blog.
@@ -98,14 +97,18 @@ router.post("/:blogId/comments", async function(request, response) {
 router.delete("/:blogId/comments", async function(request, response) {
     let commentId = request.body.commentId;
     let blogId = request.params.blogId;
-    await BlogController.deleteCommentFromBlog(blogId, commentId);
-    response.status(200).json({message : "ok"});
+    let isCommentDeleted = await BlogController.deleteCommentFromBlog(blogId, commentId, request.user);
+    if (isCommentDeleted) {
+        return response.status(200).json({message : "Comment successful removed"});
+    }
+    return response.status(200).json({message : "Comment not removed"});
+    
 })
 
 
 /**
  * To gracefully handle unknown paths, the router defines
- *  a catch-all middleware that responds with a 404 status and a friendly message.
+ * a catch-all middleware that responds with a 404 status and a friendly message.
  */
 router.use(function(request, response) {
     response.status(404).json({message : "Wooops, the page not found"});

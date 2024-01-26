@@ -2,6 +2,7 @@ import { db } from "../server.js";
 import {Blog} from "../models/blog.js";
 import { Comment } from "../models/comment.js";
 import { ObjectId } from "mongodb";
+import { compareSync } from "bcrypt";
 
 
 export class BlogController {
@@ -84,16 +85,21 @@ export class BlogController {
      *  removes it from the blog's comments array, and updates the blog in the database.
      *  It returns the count of modified blogs (0 or 1).
      */
-    static async deleteCommentFromBlog(blogId, commentId) {
+    static async deleteCommentFromBlog(blogId, commentId, user) {
         let blog = await this.getBlogById(blogId);
         let blogCollection = db.collection("blogs");
 
+
         let targetCommentIndex = blog.comments.findIndex((comment) => {
-            if (comment?.id == commentId) {
+            if (comment?.id == commentId && user._id.toString() == comment.ownerId?.toString()) {
                 return true;
             }
         })
-        blog.comments.splice(targetCommentIndex, 1);
+        if (targetCommentIndex == -1) {
+            return null;
+        }
+
+        blog.comments.splice(targetCommentIndex, 1);      
         let blogUpdatingResult = await blogCollection.updateOne({"_id" : new ObjectId(blogId)}, {
 
             $set : {comments : blog.comments}
